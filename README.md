@@ -8,11 +8,11 @@ This project is **Task 1** of my [CodeAlpha](https://www.codealpha.tech/) tasks.
 
 | New game | Extra hint |
 | :---: | :---: |
-| ![New game](screenshots/start.png) | ![Extra hint](screenshots/hint.png) |
+| ![New game](Screenshots/start.png) | ![Extra hint](Screenshots/hint.png) |
 
 | Win | Loss |
 | :---: | :---: |
-| ![Win](screenshots/win.png) | ![Loss](screenshots/lose.png) |
+| ![Win](Screenshots/win.png) | ![Loss](Screenshots/lose.png) |
 
 ## Features
 
