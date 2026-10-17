@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Portfolio ledger</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700&display=swap">
+<style>
+:root{--bg:#EDF0EA;--surface:#F8F9F5;--ink:#172423;--mute:#566764;--line:#C9D2CB;--accent:#0E5A57;--on-accent:#fff;--danger:#A93220;--seg-s:48%;--seg-l:40%;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0F1716;--surface:#172221;--ink:#E4ECE8;--mute:#96A8A3;--line:#2B3B38;--accent:#4FC1B5;--on-accent:#07201D;--danger:#FF9A85;--seg-s:50%;--seg-l:58%;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0F1716;--surface:#172221;--ink:#E4ECE8;--mute:#96A8A3;--line:#2B3B38;--accent:#4FC1B5;--on-accent:#07201D;--danger:#FF9A85;--seg-s:50%;--seg-l:58%;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Schibsted Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:28px 20px 56px}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+h1{font-size:1.5rem;margin:0;letter-spacing:-.01em}
+h2{font-size:1.1rem;margin:0 0 10px}
+.sub,.mute{color:var(--mute);margin:4px 0 0;font-size:.95rem}
+.cur{display:flex;flex-direction:column;gap:4px;font-size:.85rem;color:var(--mute)}
+.total{margin:30px 0 22px}
+.lab{margin:0;color:var(--mute)}
+.big{margin:0;font-size:clamp(2.6rem,9vw,4.6rem);font-weight:700;line-height:1.08;letter-spacing:-.03em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.bar{display:flex;gap:2px;height:16px;margin:18px 0 10px;border-radius:8px;overflow:hidden}
+.legend{list-style:none;display:flex;flex-wrap:wrap;gap:6px 18px;margin:0;padding:0;font-size:.9rem;font-variant-numeric:tabular-nums}
+.legend li{display:flex;align-items:center;gap:6px}
+.legend b{width:10px;height:10px;border-radius:3px;display:inline-block}
+.grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:820px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:12px 0}
+.row label{display:flex;flex-direction:column;gap:4px;font-size:.85rem;color:var(--mute)}
+.row input{width:130px}
+input,select,textarea{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-height:40px}
+:is(input,select,textarea,button):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button{font:inherit;min-height:40px;border-radius:8px;padding:0 16px;cursor:pointer;border:1px solid var(--line);background:transparent;color:var(--ink)}
+button.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent);font-weight:500}
+button:disabled{opacity:.5;cursor:default}
+button.x{min-height:36px;width:36px;padding:0;font-size:1.2rem;color:var(--mute)}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-weight:500;font-size:.85rem;color:var(--mute);padding:6px}
+td{padding:6px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+th.num,td.num{text-align:right}
+td input{width:96px;text-align:right}
+.msg{min-height:1.5em;margin:4px 0 0;font-size:.9rem;color:var(--mute)}
+.msg.err{color:var(--danger)}
+.actions{margin-top:12px}
+textarea{width:100%;height:170px;resize:vertical;font:13px/1.5 ui-monospace,Consolas,monospace}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>Portfolio ledger</h1>
+    <p class="sub">List what you own. Values come from your own price list, so nothing is fetched live.</p>
+  </div>
+  <label class="cur">Currency <select id="cur"></select></label>
+</header>
+
+<section class="total" aria-labelledby="tl">
+  <p id="tl" class="lab">Total investment</p>
+  <p id="total" class="big">0</p>
+  <p id="count" class="sub"></p>
+  <div id="bar" class="bar" role="img" hidden></div>
+  <ul id="legend" class="legend"></ul>
+</section>
+
+<div class="grid">
+  <section class="panel">
+    <h2>Holdings</h2>
+    <form id="hf" class="row" autocomplete="off">
+      <label>Stock <input id="hs" list="syms" maxlength="10" required></label>
+      <label>Shares <input id="hq" inputmode="numeric" required></label>
+      <button class="primary" type="submit">Add holding</button>
+    </form>
+    <datalist id="syms"></datalist>
+    <p id="m1" class="msg" role="status"></p>
+    <div id="hold" class="scroll"></div>
+    <div class="actions"><button id="clearH" type="button">Clear holdings</button></div>
+  </section>
+
+  <section class="panel">
+    <h2>Price list</h2>
+    <p class="mute">Price per share. Edit a price and every total updates.</p>
+    <form id="pf" class="row" autocomplete="off">
+      <label>Stock <input id="ps" maxlength="10" required></label>
+      <label>Price <input id="pp" inputmode="decimal" required></label>
+      <button class="primary" type="submit">Save price</button>
+    </form>
+    <p id="m2" class="msg" role="status"></p>
+    <div id="price" class="scroll"></div>
+    <div class="actions"><button id="resetP" type="button">Restore default prices</button></div>
+  </section>
+</div>
+
+<section class="panel">
+  <h2>Export</h2>
+  <div class="row">
+    <label>Format <select id="fmt"><option value="csv">CSV</option><option value="txt">Plain text</option></select></label>
+    <button id="copy" type="button" class="primary">Copy to clipboard</button>
+    <button id="save" type="button">Save as file</button>
+    <span id="cm" class="mute" role="status"></span>
+  </div>
+  <textarea id="out" readonly aria-label="Export preview" placeholder="Add a holding to see the export."></textarea>
+</section>
+</div>
+
+<script>
+(function(){
+const KEY="portfolio-ledger-v1";
+const DEFAULTS={AAPL:180,TSLA:250,GOOGL:140,MSFT:330,AMZN:125};
+const CUR={USD:["en-US","US dollar"],INR:["en-IN","Indian rupee"],EUR:["en-IE","Euro"],GBP:["en-GB","British pound"]};
+const SYM=/^[A-Z0-9.\-]{1,10}$/;
+const $=id=>document.getElementById(id);
+const has=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
+const okPrice=v=>typeof v==="number"&&isFinite(v)&&v<=1e6&&Math.round(v*100)>=1;
+const okQty=q=>Number.isInteger(q)&&q>=1&&q<=1e6;
+
+let state={currency:"USD",prices:Object.assign({},DEFAULTS),holdings:{}};
+try{
+  const raw=localStorage.getItem(KEY);
+  if(raw){
+    const p=JSON.parse(raw);
+    if(p&&p.prices&&typeof p.prices==="object"){
+      const prices={},holdings={};
+      for(const s in p.prices){if(SYM.test(s)&&okPrice(p.prices[s]))prices[s]=p.prices[s];}
+      const hs=p.holdings&&typeof p.holdings==="object"?p.holdings:{};
+      for(const s in hs){if(has(prices,s)&&okQty(hs[s]))holdings[s]=hs[s];}
+      state={currency:has(CUR,p.currency)?p.currency:"USD",prices,holdings};
+    }
+  }
+}catch(e){}
+
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+function el(tag,props,...kids){
+  const e=document.createElement(tag);
+  for(const k in props||{}){k==="class"?e.className=props[k]:e.setAttribute(k,props[k]);}
+  for(const kid of kids){if(kid!=null&&kid!==false)e.append(kid);}
+  return e;
+}
+function setMsg(id,t,err){const e=$(id);e.textContent=t;e.className="msg"+(err?" err":"");}
+const money=c=>new Intl.NumberFormat(CUR[state.currency][0],{style:"currency",currency:state.currency}).format(c/100);
+const symbols=o=>Object.keys(o).sort();
+const priceC=s=>Math.round(state.prices[s]*100);
+const rowC=s=>priceC(s)*state.holdings[s];
+const totalC=()=>symbols(state.holdings).reduce((a,s)=>a+rowC(s),0);
+
+function parsePrice(t){
+  t=t.trim().replace(/,/g,"");
+  if(!/^\d+(\.\d{1,2})?$/.test(t))return null;
+  const v=Number(t);return okPrice(v)?v:null;
+}
+function parseQty(t){
+  t=t.trim().replace(/,/g,"");
+  if(!/^\d+$/.test(t))return null;
+  const q=Number(t);return okQty(q)?q:null;
+}
+function arm(btn,label,fn){
+  let t;
+  btn.addEventListener("click",()=>{
+    if(btn.dataset.armed){clearTimeout(t);delete btn.dataset.armed;btn.textContent=label;fn();}
+    else{btn.dataset.armed="1";btn.textContent="Click again to confirm";
+      t=setTimeout(()=>{delete btn.dataset.armed;btn.textContent=label;},3000);}
+  });
+}
+
+function renderHoldings(){
+  const box=$("hold");box.replaceChildren();
+  const syms=symbols(state.holdings);
+  if(!syms.length){box.append(el("p",{class:"mute"},"No holdings yet. Choose a stock above and enter how many shares you own."));return;}
+  const tb=el("tbody");
+  for(const s of syms){
+    const val=el("td",{class:"num"},money(rowC(s)));
+    const qty=el("input",{inputmode:"numeric","aria-label":"Shares of "+s,value:String(state.holdings[s])});
+    qty.addEventListener("change",()=>{
+      const q=parseQty(qty.value);
+      if(q===null){qty.value=state.holdings[s];setMsg("m1","Shares must be a whole number from 1 to 1,000,000.",true);return;}
+      state.holdings[s]=q;qty.value=q;val.textContent=money(rowC(s));setMsg("m1","");afterChange();
+    });
+    const rm=el("button",{class:"x",type:"button","aria-label":"Remove "+s,title:"Remove "+s},"×");
+    rm.addEventListener("click",()=>{delete state.holdings[s];setMsg("m1",s+" removed.");renderHoldings();afterChange();});
+    tb.append(el("tr",{},el("td",{},s),el("td",{},qty),el("td",{class:"num"},money(priceC(s))),val,el("td",{},rm)));
+  }
+  const head=el("thead",{},el("tr",{},el("th",{},"Stock"),el("th",{},"Shares"),el("th",{class:"num"},"Price"),el("th",{class:"num"},"Value"),el("th",{},el("span",{class:"sr"},"Remove"))));
+  box.append(el("table",{},head,tb));
+}
+
+function renderPrices(){
+  const box=$("price");box.replaceChildren();
+  const syms=symbols(state.prices);
+  $("syms").replaceChildren(...syms.map(s=>el("option",{value:s})));
+  if(!syms.length){box.append(el("p",{class:"mute"},"Your price list is empty. Save a price above."));return;}
+  const tb=el("tbody");
+  for(const s of syms){
+    const inp=el("input",{inputmode:"decimal","aria-label":"Price of "+s,value:state.prices[s].toFixed(2)});
+    inp.addEventListener("change",()=>{
+      const p=parsePrice(inp.value);
+      if(p===null){inp.value=state.prices[s].toFixed(2);setMsg("m2","Enter a price like 180 or 180.50, up to 1,000,000.",true);return;}
+      state.prices[s]=p;inp.value=p.toFixed(2);setMsg("m2",s+" price updated.");renderHoldings();afterChange();
+    });
+    const rm=el("button",{class:"x",type:"button","aria-label":"Delete "+s,title:"Delete "+s},"×");
+    rm.addEventListener("click",()=>{
+      if(has(state.holdings,s)){setMsg("m2","Remove "+s+" from your holdings before deleting its price.",true);return;}
+      delete state.prices[s];setMsg("m2",s+" deleted.");renderPrices();afterChange();
+    });
+    tb.append(el("tr",{},el("td",{},s),el("td",{class:"num"},inp),el("td",{},rm)));
+  }
+  const head=el("thead",{},el("tr",{},el("th",{},"Stock"),el("th",{class:"num"},"Price"),el("th",{},el("span",{class:"sr"},"Delete"))));
+  box.append(el("table",{},head,tb));
+}
+
+function renderSummary(){
+  const syms=symbols(state.holdings),total=totalC();
+  $("total").textContent=money(total);
+  const shares=syms.reduce((a,s)=>a+state.holdings[s],0);
+  $("count").textContent=syms.length
+    ?syms.length+(syms.length===1?" stock":" stocks")+", "+shares.toLocaleString("en-US")+" shares"
+    :"Nothing added yet.";
+  const bar=$("bar"),lg=$("legend");
+  bar.replaceChildren();lg.replaceChildren();
+  bar.hidden=!syms.length;
+  const parts=[];
+  syms.forEach((s,i)=>{
+    const c=rowC(s),pct=(c/total*100).toFixed(1),col="hsl("+((i*57+165)%360)+" var(--seg-s) var(--seg-l))";
+    const seg=el("i",{title:s+" "+pct+"%"});
+    seg.style.flex=c+" 1 0px";seg.style.background=col;bar.append(seg);
+    const sw=el("b");sw.style.background=col;
+    lg.append(el("li",{},sw,s+" "+pct+"%"));
+    parts.push(s+" "+pct+"%");
+  });
+  bar.setAttribute("aria-label","Share of total by stock: "+parts.join(", "));
+}
+
+function exportText(){
+  const syms=symbols(state.holdings);
+  if(!syms.length)return "";
+  const total=totalC(),c=state.currency,L=[];
+  if($("fmt").value==="csv"){
+    L.push("Stock,Quantity,Price ("+c+"),Value ("+c+")");
+    for(const s of syms)L.push([s,state.holdings[s],state.prices[s].toFixed(2),(rowC(s)/100).toFixed(2)].join(","));
+    L.push("TOTAL,,,"+(total/100).toFixed(2));
+  }else{
+    const rule="========================================";
+    L.push("Stock portfolio summary",rule);
+    for(const s of syms)L.push(s+": "+state.holdings[s]+" shares x "+money(priceC(s))+" = "+money(rowC(s)));
+    L.push(rule,"Total investment: "+money(total));
+  }
+  return L.join("\n")+"\n";
+}
+function renderExport(){
+  const t=exportText();
+  $("out").value=t;$("copy").disabled=!t;$("save").disabled=!t;$("cm").textContent="";
+}
+function afterChange(){save();renderSummary();renderExport();}
+function renderAll(){renderPrices();renderHoldings();renderSummary();renderExport();$("cur").value=state.currency;}
+
+$("cur").replaceChildren(...Object.keys(CUR).map(k=>el("option",{value:k},k+" ("+CUR[k][1]+")")));
+$("cur").addEventListener("change",e=>{state.currency=e.target.value;save();renderAll();});
+$("fmt").addEventListener("change",renderExport);
+
+$("hf").addEventListener("submit",e=>{
+  e.preventDefault();
+  const s=$("hs").value.trim().toUpperCase(),q=parseQty($("hq").value);
+  if(!SYM.test(s)){setMsg("m1","Enter a stock name using letters and numbers, up to 10 characters.",true);return;}
+  if(!has(state.prices,s)){setMsg("m1",s+" isn’t in your price list. Save its price on the right first.",true);return;}
+  if(q===null){setMsg("m1","Shares must be a whole number from 1 to 1,000,000.",true);return;}
+  const now=(has(state.holdings,s)?state.holdings[s]:0)+q;
+  if(now>1e6){setMsg("m1","You can hold at most 1,000,000 shares of one stock.",true);return;}
+  state.holdings[s]=now;
+  $("hs").value="";$("hq").value="";
+  setMsg("m1","Added "+q.toLocaleString("en-US")+" "+s+(now>q?". You now hold "+now.toLocaleString("en-US")+".":"."));
+  renderHoldings();afterChange();$("hs").focus();
+});
+$("pf").addEventListener("submit",e=>{
+  e.preventDefault();
+  const s=$("ps").value.trim().toUpperCase(),p=parsePrice($("pp").value);
+  if(!SYM.test(s)){setMsg("m2","Enter a stock name using letters and numbers, up to 10 characters.",true);return;}
+  if(p===null){setMsg("m2","Enter a price like 180 or 180.50, up to 1,000,000.",true);return;}
+  state.prices[s]=p;
+  $("ps").value="";$("pp").value="";
+  setMsg("m2",s+" saved at "+money(Math.round(p*100))+".");
+  renderPrices();renderHoldings();afterChange();$("ps").focus();
+});
+arm($("clearH"),"Clear holdings",()=>{state.holdings={};setMsg("m1","All holdings cleared.");renderHoldings();afterChange();});
+arm($("resetP"),"Restore default prices",()=>{
+  const np=Object.assign({},DEFAULTS);
+  for(const s in state.holdings){if(!has(np,s))np[s]=state.prices[s];}
+  state.prices=np;setMsg("m2","Default prices restored. Stocks you hold keep their own entries.");
+  renderPrices();renderHoldings();afterChange();
+});
+$("save").addEventListener("click",async()=>{
+  const text=$("out").value;
+  if(!text){$("cm").textContent="Add a holding first.";return;}
+  try{
+    const r=await fetch("/save",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({format:$("fmt").value,content:text})});
+    const j=await r.json();
+    $("cm").textContent=j.ok?"Saved "+j.file+" in the project folder.":"Could not save the file.";
+  }catch(e){$("cm").textContent="Saving needs app.py running. Start it with: python app.py";}
+});
+$("copy").addEventListener("click",async()=>{
+  const ta=$("out");let ok=false;
+  try{await navigator.clipboard.writeText(ta.value);ok=true;}
+  catch(e){try{ta.select();ok=document.execCommand("copy");}catch(e2){}}
+  $("cm").textContent=ok?"Copied.":"Copy was blocked. Select the text above and copy it yourself.";
+});
+
+renderAll();
+})();
+</script>
+</body>
+</html>
