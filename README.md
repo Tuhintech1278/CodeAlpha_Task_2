@@ -11,7 +11,7 @@ Built as **Task 2** for [CodeAlpha](https://www.codealpha.tech/).
 
 | Dashboard | Currency switcher | Investment Calculator | Export |
 |---|---|---|---|
-| ![Dashboard](screenshots/dashboard.png) | ![Currency switcher](screenshots/currency.png) |[Investment Calculator](screenshots/calculator.png) | ![Export](screenshots/export.png) |
+| ![Dashboard](Portfolio-Tracker/screenshots/dashboard.png) | ![Currency switcher](Portfolio-Tracker/screenshots/currency.png) |[Investment Calculator](Portfolio-Tracker/screenshots/calculator.png) | ![Export](Portfolio-Tracker/screenshots/export.png) |
 
 ## Features
 
